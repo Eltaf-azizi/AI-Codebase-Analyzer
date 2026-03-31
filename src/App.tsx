@@ -380,3 +380,105 @@ const ChatPanel = ({ files, history, onSendMessage }: { files: FileData[], histo
     </div>
   );
 };
+
+// --- Main App ---
+
+export default function App() {
+  const [projectData, setProjectData] = useState<{ files: FileData[], projectName: string, stats: ProjectStats } | null>(null);
+  const [selectedFile, setSelectedFile] = useState<FileData | null>(null);
+  const [analysis, setAnalysis] = useState<AnalysisResult | null>(null);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(true);
+  const [activeTab, setActiveTab] = useState<'analysis' | 'visualization'>('analysis');
+
+  const handleUpload = async (data: { files: FileData[], projectName: string, stats: ProjectStats }) => {
+    setProjectData(data);
+    setIsAnalyzing(true);
+    try {
+      // Parallelize initialization and analysis
+      const [analysisResult] = await Promise.all([
+        AIService.analyzeProject(data.files),
+        AIService.initialize(data.files)
+      ]);
+      
+      setAnalysis(analysisResult);
+      setChatHistory([{ 
+        role: 'model', 
+        content: `Hello! I've analyzed **${data.projectName}**. I've indexed ${data.files.length} files and generated a semantic map of your codebase. I can help you understand the architecture, logic, or specific files. What would you like to know?`, 
+        timestamp: new Date().toISOString() 
+      }]);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const handleSendMessage = async (msg: string) => {
+    if (!projectData) return;
+    const userMsg: ChatMessage = { role: 'user', content: msg, timestamp: new Date().toISOString() };
+    setChatHistory(prev => [...prev, userMsg]);
+    
+    try {
+      const response = await AIService.chat(projectData.files, msg, chatHistory.concat(userMsg));
+      setChatHistory(prev => [...prev, { role: 'model', content: response, timestamp: new Date().toISOString() }]);
+    } catch (error) {
+      console.error(error);
+      setChatHistory(prev => [...prev, { role: 'model', content: "I'm sorry, I encountered an error while processing your request.", timestamp: new Date().toISOString() }]);
+    }
+  };
+
+  if (!projectData) {
+    return <FileUploader onUpload={handleUpload} />;
+  }
+
+  return (
+    <div className="flex h-screen bg-zinc-950 text-zinc-100 font-sans overflow-hidden selection:bg-indigo-500/30 selection:text-indigo-200">
+      {/* Sidebar */}
+      <AnimatePresence mode="wait">
+        {isSidebarOpen && (
+          <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 320, opacity: 1 }} exit={{ width: 0, opacity: 0 }} className="shrink-0">
+            <CodeExplorer files={projectData.files} onFileSelect={setSelectedFile} selectedFile={selectedFile} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col min-w-0 bg-zinc-950">
+        <header className="h-16 border-b border-zinc-900 flex items-center justify-between px-6 bg-zinc-950/80 backdrop-blur-md z-10">
+          <div className="flex items-center gap-4">
+            <button onClick={() => setIsSidebarOpen(!isSidebarOpen)} className="p-2 hover:bg-zinc-900 rounded-xl transition-colors text-zinc-500">
+              {isSidebarOpen ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+            </button>
+            <div className="flex items-center gap-2">
+              <Terminal className="w-5 h-5 text-indigo-400" />
+              <h1 className="font-bold text-white tracking-tight truncate max-w-[200px]">{projectData.projectName}</h1>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4 px-4 py-1.5 bg-zinc-900 rounded-full border border-zinc-800 text-xs text-zinc-400">
+              <div className="flex items-center gap-1.5"><FileCode className="w-3.5 h-3.5" /> {projectData.stats.totalFiles} files</div>
+              <div className="w-px h-3 bg-zinc-800" />
+              <div className="flex items-center gap-1.5"><BarChart3 className="w-3.5 h-3.5" /> {(projectData.stats.totalSize / 1024 / 1024).toFixed(2)} MB</div>
+            </div>
+            <button onClick={() => setIsChatOpen(!isChatOpen)} className={`p-2 rounded-xl transition-all ${isChatOpen ? 'bg-indigo-600 text-white' : 'bg-zinc-900 text-zinc-500 hover:bg-zinc-800'}`}>
+              <MessageSquare className="w-5 h-5" />
+            </button>
+          </div>
+        </header>
+
+        
+
+      {/* AI Chat Sidebar */}
+      <AnimatePresence mode="wait">
+        {isChatOpen && (
+          <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 384, opacity: 1 }} exit={{ width: 0, opacity: 0 }} className="shrink-0">
+            <ChatPanel files={projectData.files} history={chatHistory} onSendMessage={handleSendMessage} />
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
