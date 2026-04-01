@@ -32,7 +32,7 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { AIService } from './services/aiService';
 import { FileData, AnalysisResult, ChatMessage, ProjectStats } from './types';
-import { ArchitectureGraph } from './components/ArchitectureGraph';
+import { ArchitectureGraph } from './components/architectureGraph.tsx';
 
 // --- Components ---
 
