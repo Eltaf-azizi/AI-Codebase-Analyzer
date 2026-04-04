@@ -84,6 +84,46 @@ export default function FileUploader({ onUpload }: FileUploaderProps) {
         />
 
         
+        <AnimatePresence mode="wait">
+          {isLoading ? (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="flex flex-col items-center gap-4"
+            >
+              <Loader2 className="w-12 h-12 text-zinc-900 animate-spin" />
+              <p className="text-zinc-600 font-medium">Analyzing codebase...</p>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="upload"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              className="flex flex-col items-center gap-4"
+            >
+              <div className="w-20 h-20 rounded-2xl bg-zinc-100 flex items-center justify-center group-hover:bg-zinc-200 transition-colors">
+                <FileArchive className="w-10 h-10 text-zinc-600" />
+              </div>
+              <div className="text-center">
+                <p className="text-xl font-semibold text-zinc-900">Drop ZIP file here</p>
+                <p className="text-zinc-500">or click to browse from your computer</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {error && (
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="absolute -bottom-10 text-red-500 font-medium"
+          >
+            {error}
+          </motion.p>
+        )}
       </div>
 
       <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
