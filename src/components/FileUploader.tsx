@@ -49,4 +49,62 @@ export default function FileUploader({ onUpload }: FileUploaderProps) {
     if (file) handleFile(file);
   };
   
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[400px] p-8">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center mb-12"
+      >
+        <h1 className="text-5xl font-bold tracking-tight text-zinc-900 mb-4">
+          AI Codebase Analyzer
+        </h1>
+        <p className="text-zinc-500 text-lg max-w-2xl mx-auto">
+          Upload your project as a ZIP file and let AI explain the architecture, logic, and dependencies.
+        </p>
+      </motion.div>
+
+      <div
+        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={onDrop}
+        onClick={() => fileInputRef.current?.click()}
+        className={`
+          relative w-full max-w-2xl aspect-[16/9] rounded-3xl border-2 border-dashed transition-all duration-300 cursor-pointer
+          flex flex-col items-center justify-center gap-6 group
+          ${isDragging ? 'border-zinc-900 bg-zinc-50 scale-[1.02]' : 'border-zinc-200 hover:border-zinc-400 hover:bg-zinc-50/50'}
+        `}
+      >
+        <input
+          type="file"
+          ref={fileInputRef}
+          onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+          className="hidden"
+          accept=".zip"
+        />
+
+        
+      </div>
+
+      <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
+        {[
+          { title: 'Architecture', desc: 'Understand how modules interact' },
+          { title: 'Logic Flow', desc: 'Trace execution across files' },
+          { title: 'Bug Detection', desc: 'Identify potential issues early' },
+        ].map((feature, i) => (
+          <motion.div
+            key={feature.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 * i }}
+            className="p-6 rounded-2xl bg-white border border-zinc-100 shadow-sm"
+          >
+            <CheckCircle2 className="w-6 h-6 text-zinc-900 mb-3" />
+            <h3 className="font-bold text-zinc-900 mb-1">{feature.title}</h3>
+            <p className="text-zinc-500 text-sm">{feature.desc}</p>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
 }
