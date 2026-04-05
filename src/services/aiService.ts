@@ -107,4 +107,59 @@ export class AIService {
     }
   }
   
+  /**
+   * Handles interactive chat with RAG.
+   */
+  static async chat(files: FileData[], message: string, history: ChatMessage[]): Promise<string> {
+    // 1. Semantic search for relevant chunks
+    const searchResults = await vectorStore.search(message, 10);
+    
+    const context = searchResults
+      .map(res => `File: ${res.metadata.path}\nLines: ${res.metadata.startLine}-${res.metadata.endLine}\nContent:\n${res.metadata.content || res.id}`) // We should store content in metadata if we want it here easily
+      .join('\n\n---\n\n');
+
+    // Fallback to keyword search if semantic search is too sparse or we want more context
+    const keywords = message.toLowerCase().split(/\W+/).filter(k => k.length > 2);
+    const keywordFiles = files.filter(f => {
+      const pathLower = f.path.toLowerCase();
+      return keywords.some(k => pathLower.includes(k));
+    }).slice(0, 5);
+
+    const keywordContext = keywordFiles
+      .map(f => `File: ${f.path}\nContent:\n${f.content.slice(0, 4000)}`)
+      .join('\n\n---\n\n');
+
+    const allFilePaths = files.map(f => f.path).join('\n');
+
+    const systemInstruction = `
+      You are an expert AI Codebase Analyzer. You have access to the codebase provided below.
+      
+      USER CAPABILITY: The user can ask you to find specific files, search for keywords, or provide their own code snippets for analysis.
+      YOUR TASK:
+      - If the user asks for a file or keyword, search through the provided file list and relevant content.
+      - ALWAYS display the full file path for any file you mention.
+      - If multiple files match a search query (by name or content), list ALL of them with their full paths.
+      - If the user provides a code snippet, analyze it and explain its purpose, functionality, and suggest potential improvements.
+      - Provide relevant code snippets and file paths from the project when applicable.
+      
+      ALL FILES IN PROJECT:
+      ${allFilePaths}
+      
+      RELEVANT CONTEXT (Semantic Search & Keyword Match):
+      ${context}
+      ${keywordContext}
+    `;
+
+    const chat = ai.chats.create({
+      model: this.MODEL_NAME,
+      config: { systemInstruction },
+      history: history.map(h => ({
+        role: h.role,
+        parts: [{ text: h.content }]
+      }))
+    });
+
+    const response = await chat.sendMessage({ message });
+    return response.text;
+  }
 }
