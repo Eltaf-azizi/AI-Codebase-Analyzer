@@ -14,3 +14,27 @@ export interface ArchitectureNode {
   type: 'file' | 'dependency';
   group: number;
 }
+
+export interface ArchitectureLink {
+  source: string;
+  target: string;
+  value: number;
+}
+
+export interface AnalysisResult {
+  summary: string;
+  architecture: string;
+  features: string[];
+  improvements: string[];
+  security: string[];
+  architectureData?: {
+    nodes: ArchitectureNode[];
+    links: ArchitectureLink[];
+  };
+}
+
+export interface ChatMessage {
+  role: 'user' | 'model';
+  content: string;
+  timestamp: string;
+}
