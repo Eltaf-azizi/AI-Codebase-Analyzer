@@ -11,6 +11,68 @@ export interface CodeChunk {
 
 export class ParserService {
   
+  /**
+   * Simple chunking strategy: split by functions/classes if possible,
+   * otherwise split by line count.
+   */
+  static chunkFile(file: FileData): CodeChunk[] {
+    const lines = file.content.split('\n');
+    const chunks: CodeChunk[] = [];
+    
+    // Basic regex for common languages
+    const functionRegex = /^(?:async\s+)?function\s+(\w+)|(\w+)\s*[:=]\s*(?:async\s*)?\([^)]*\)\s*=>|class\s+(\w+)|def\s+(\w+)\s*\(/;
+    
+    let currentChunk: Partial<CodeChunk> | null = null;
+    
+    lines.forEach((line, index) => {
+      const match = line.match(functionRegex);
+      if (match) {
+        // If we were already in a chunk, close it
+        if (currentChunk) {
+          currentChunk.endLine = index;
+          currentChunk.content = lines.slice(currentChunk.startLine! - 1, index).join('\n');
+          chunks.push(currentChunk as CodeChunk);
+        }
+        
+        const name = match[1] || match[2] || match[3] || match[4];
+        const type = match[3] ? 'class' : 'function';
+        
+        currentChunk = {
+          path: file.path,
+          type,
+          name,
+          startLine: index + 1,
+        };
+      }
+      
+      // If chunk is getting too long, or it's the end of the file
+      if (currentChunk && (index + 1 - currentChunk.startLine! > 100)) {
+        currentChunk.endLine = index + 1;
+        currentChunk.content = lines.slice(currentChunk.startLine! - 1, index + 1).join('\n');
+        chunks.push(currentChunk as CodeChunk);
+        currentChunk = null;
+      }
+    });
+    
+    if (currentChunk) {
+      currentChunk.endLine = lines.length;
+      currentChunk.content = lines.slice(currentChunk.startLine! - 1, lines.length).join('\n');
+      chunks.push(currentChunk as CodeChunk);
+    }
+    
+    // If no chunks were found (e.g. small file or no functions), treat whole file as module
+    if (chunks.length === 0) {
+      chunks.push({
+        path: file.path,
+        content: file.content,
+        type: 'module',
+        startLine: 1,
+        endLine: lines.length
+      });
+    }
+    
+    return chunks;
+  }
 
   static getDependencies(file: FileData): string[] {
     const lines = file.content.split('\n');
