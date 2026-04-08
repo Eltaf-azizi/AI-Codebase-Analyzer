@@ -8,7 +8,7 @@ export interface FileData {
 }
 
 export async function summarizeCodebase(files: FileData[]) {
-  const model = "gemini-3-flash-preview";
+  const model = "gemini-1.5-flash";
   
   // Create a condensed version of the codebase for the prompt
   const codebaseContext = files
@@ -36,7 +36,7 @@ export async function summarizeCodebase(files: FileData[]) {
 }
 
 export async function chatWithCodebase(files: FileData[], message: string, history: any[]) {
-  const model = "gemini-3-flash-preview";
+  const model = "gemini-1.5-flash";
   
   // 1. Identify relevant files based on keywords in the message
   const keywords = message.toLowerCase().split(/\W+/).filter(k => k.length > 2);

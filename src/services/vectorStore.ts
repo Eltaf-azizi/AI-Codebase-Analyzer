@@ -19,7 +19,7 @@ export class VectorStore {
     for (let i = 0; i < texts.length; i += BATCH_SIZE) {
       const batch = texts.slice(i, i + BATCH_SIZE);
       const result = await ai.models.embedContent({
-        model: "gemini-embedding-2-preview",
+        model: "gemini-embedding-1.0",
         contents: batch,
       });
 
@@ -36,7 +36,7 @@ export class VectorStore {
   
   async search(query: string, limit: number = 5): Promise<VectorEntry[]> {
     const result = await ai.models.embedContent({
-      model: "gemini-embedding-2-preview",
+      model: "gemini-embedding-1.0",
       contents: [query],
     });
 

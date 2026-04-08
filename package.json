@@ -1,8 +1,9 @@
 {
-  "name": "react-example",
+  "name": "ai-codebase-analyzer",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "AI-powered codebase analysis tool that provides instant understanding of project architecture, logic, and security through interactive chat and visualizations.",
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build",

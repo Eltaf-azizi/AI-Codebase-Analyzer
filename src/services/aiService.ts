@@ -6,7 +6,7 @@ import { vectorStore } from "./vectorStore";
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
 export class AIService {
-  private static readonly MODEL_NAME = "gemini-3-flash-preview";
+  private static readonly MODEL_NAME = "gemini-1.5-flash";
   private static isInitialized = false;
 
   /**
@@ -25,7 +25,7 @@ export class AIService {
         path: chunk.path, 
         startLine: chunk.startLine, 
         endLine: chunk.endLine,
-        content: chunk.content // Store content for context retrieval
+        content: chunk.content
       }
     })));
 
@@ -115,7 +115,7 @@ export class AIService {
     const searchResults = await vectorStore.search(message, 10);
     
     const context = searchResults
-      .map(res => `File: ${res.metadata.path}\nLines: ${res.metadata.startLine}-${res.metadata.endLine}\nContent:\n${res.metadata.content || res.id}`) // We should store content in metadata if we want it here easily
+      .map(res => `File: ${res.metadata.path}\nLines: ${res.metadata.startLine}-${res.metadata.endLine}\nContent:\n${res.metadata.content}`)
       .join('\n\n---\n\n');
 
     // Fallback to keyword search if semantic search is too sparse or we want more context

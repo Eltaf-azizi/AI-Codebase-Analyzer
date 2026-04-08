@@ -5,12 +5,15 @@ import multer from "multer";
 import AdmZip from "adm-zip";
 import { fileURLToPath } from "url";
 import fs from "fs";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(express.json({ limit: '100mb' }));
