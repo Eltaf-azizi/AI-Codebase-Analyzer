@@ -34,6 +34,40 @@ export class VectorStore {
     }
   }
   
+  async search(query: string, limit: number = 5): Promise<VectorEntry[]> {
+    const result = await ai.models.embedContent({
+      model: "gemini-embedding-2-preview",
+      contents: [query],
+    });
+
+    const queryEmbedding = result.embeddings[0].values;
+    
+    const scoredEntries = this.entries.map(entry => ({
+      entry,
+      score: this.cosineSimilarity(queryEmbedding, entry.embedding),
+    }));
+
+    return scoredEntries
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit)
+      .map(s => s.entry);
+  }
+
+  private cosineSimilarity(vecA: number[], vecB: number[]): number {
+    let dotProduct = 0;
+    let normA = 0;
+    let normB = 0;
+    for (let i = 0; i < vecA.length; i++) {
+      dotProduct += vecA[i] * vecB[i];
+      normA += vecA[i] * vecA[i];
+      normB += vecB[i] * vecB[i];
+    }
+    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+  }
+
+  clear() {
+    this.entries = [];
+  }
 }
 
 export const vectorStore = new VectorStore();
