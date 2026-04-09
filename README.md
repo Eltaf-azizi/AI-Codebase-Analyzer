@@ -1,64 +1,42 @@
 # AI Codebase Analyzer
 
-An AI-powered tool for instant codebase analysis and understanding. Upload your project as a ZIP file and get comprehensive insights into architecture, logic flow, security vulnerabilities, and interactive Q&A about your code.
+A Vite + React application that analyzes a ZIP-packed codebase, extracts file content, and performs architecture and chat-based analysis using Google Gemini on the server.
 
 ## Features
 
-- **Instant Analysis**: Upload a ZIP file and get immediate AI-powered analysis
-- **Architecture Visualization**: Interactive graph showing file dependencies and relationships
-- **Security Scanning**: Automated detection of potential security vulnerabilities
-- **Interactive Chat**: Ask questions about your codebase and get contextual answers
-- **Code Explorer**: Browse and search through your project files
-- **Multi-language Support**: Works with various programming languages
-
-## Tech Stack
-
-- **Frontend**: React 19, TypeScript, Tailwind CSS, Vite
-- **Backend**: Node.js, Express, TypeScript
-- **AI**: Google Gemini 1.5 Flash with RAG (Retrieval-Augmented Generation)
-- **Visualization**: D3.js for architecture graphs
-- **File Processing**: Adm-Zip for ZIP extraction
+- Upload a `.zip` repository and preview file contents.
+- Server-side Gemini analysis to avoid exposing API keys in the browser.
+- Interactive AI chat about project architecture, files, and logic.
+- Dependency graph visualization and code explorer.
 
 ## Setup
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Set up environment variables:
-   Create a `.env` file in the root directory:
-   ```
-   GEMINI_API_KEY=your_google_gemini_api_key_here
-   ```
-4. Start the development server:
-   ```bash
-   npm run dev
-   ```
-5. Open http://localhost:3000 in your browser
+1. Copy `.env.example` to `.env`.
+2. Add your Gemini API key to `.env`:
 
-## Usage
+```env
+GEMINI_API_KEY="your_api_key_here"
+```
 
-1. Upload a ZIP file containing your codebase
-2. Wait for the AI analysis to complete
-3. Explore the analysis dashboard with summary, architecture, and security insights
-4. Use the interactive chat to ask questions about specific files or logic
-5. Browse files in the code explorer and view syntax-highlighted code
+3. Install dependencies:
 
-## API Endpoints
+```bash
+npm install
+```
 
-- `POST /api/upload`: Upload and process ZIP files
-- `GET /api/health`: Health check endpoint
+4. Run the app locally:
 
-## Development
+```bash
+npm run dev
+```
 
-- `npm run build`: Build for production
-- `npm run preview`: Preview production build
-- `npm run lint`: Type check with TypeScript
+5. Open the app in your browser:
 
-## Security Notes
+```bash
+http://localhost:3000
+```
 
-- Files are processed in memory and not stored permanently
-- Large files (>50KB) are truncated for analysis
-- Binary files and common build artifacts are excluded
-- API keys should be kept secure and not committed to version control
+## Notes
+
+- The backend loads `GEMINI_API_KEY` from `.env` and serves analysis/chat endpoints.
+- The client uploads ZIP files to `/api/upload` and sends chat requests to `/api/chat`.

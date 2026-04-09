@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from "express";
 import { createServer as createViteServer } from "vite";
 import path from "path";
@@ -5,15 +6,16 @@ import multer from "multer";
 import AdmZip from "adm-zip";
 import { fileURLToPath } from "url";
 import fs from "fs";
-import dotenv from "dotenv";
-
-dotenv.config();
+import { AIService } from "./src/services/aiService.ts";
+import { FileData, ProjectStats, ChatMessage } from "./src/types/index.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = 3000;
+
+let lastProject: { files: FileData[]; projectName: string; stats: ProjectStats } | null = null;
 
 // Middleware
 app.use(express.json({ limit: '100mb' }));
@@ -59,17 +61,42 @@ app.post("/api/upload", upload.single("file"), async (req: any, res) => {
       }
     });
 
+    const projectName = req.file.originalname.replace('.zip', '');
+    const stats: ProjectStats = {
+      totalFiles: files.length,
+      totalSize: files.reduce((acc, f) => acc + f.size, 0)
+    };
+
+    await AIService.initialize(files);
+    const analysis = await AIService.analyzeProject(files);
+
+    lastProject = { files, projectName, stats };
+
     res.json({ 
-      projectName: req.file.originalname.replace('.zip', ''),
+      projectName,
       files,
-      stats: {
-        totalFiles: files.length,
-        totalSize: files.reduce((acc, f) => acc + f.size, 0)
-      }
+      stats,
+      analysis
     });
   } catch (error) {
     console.error("Upload error:", error);
     res.status(500).json({ error: "Failed to process ZIP file" });
+  }
+});
+
+app.post("/api/chat", express.json({ limit: '50mb' }), async (req, res) => {
+  try {
+    const { message, history } = req.body as { message: string; history: ChatMessage[] };
+    if (!message) return res.status(400).json({ error: "Missing message" });
+    if (!lastProject || !lastProject.files.length) {
+      return res.status(400).json({ error: "No project data available for chat. Please upload a project first." });
+    }
+
+    const reply = await AIService.chat(lastProject.files, message, history || []);
+    res.json({ reply });
+  } catch (error) {
+    console.error("Chat error:", error);
+    res.status(500).json({ error: "Failed to generate chat response" });
   }
 });
 
