@@ -35,7 +35,7 @@ import { ArchitectureGraph } from './components/architectureGraph.tsx';
 
 // --- Components ---
 
-const FileUploader = ({ onUpload }: { onUpload: (data: { files: FileData[], projectName: string, stats: ProjectStats }) => void }) => {
+const FileUploader = ({ onUpload }: { onUpload: (data: { files: FileData[], projectName: string, stats: ProjectStats, analysis: AnalysisResult }) => void }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

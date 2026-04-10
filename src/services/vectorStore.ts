@@ -24,11 +24,14 @@ export class VectorStore {
       });
 
       const embeddings = result.embeddings;
+      if (!embeddings) throw new Error("No embeddings returned");
       for (let j = 0; j < batch.length; j++) {
+        const embedding = embeddings[j]?.values;
+        if (!embedding) throw new Error("Missing embedding values");
         this.entries.push({
           id: entries[i + j].id,
           metadata: entries[i + j].metadata,
-          embedding: embeddings[j].values,
+          embedding,
         });
       }
     }
@@ -40,7 +43,10 @@ export class VectorStore {
       contents: [query],
     });
 
-    const queryEmbedding = result.embeddings[0].values;
+    const embeddings = result.embeddings;
+    if (!embeddings || !embeddings[0]) throw new Error("No query embedding");
+    const queryEmbedding = embeddings[0].values;
+    if (!queryEmbedding) throw new Error("No query embedding values");
     
     const scoredEntries = this.entries.map(entry => ({
       entry,

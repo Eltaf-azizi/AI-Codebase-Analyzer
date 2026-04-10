@@ -74,6 +74,7 @@ export class AIService {
     });
 
     try {
+      if (!response.text) throw new Error("No response text from analysis");
       const result = JSON.parse(response.text);
       
       // 2. Extract architecture data for visualization
@@ -160,6 +161,6 @@ export class AIService {
     });
 
     const response = await chat.sendMessage({ message });
-    return response.text;
+    return response.text || "No response generated";
   }
 }
