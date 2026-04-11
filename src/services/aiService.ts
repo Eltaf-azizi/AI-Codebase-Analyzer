@@ -74,8 +74,9 @@ export class AIService {
     });
 
     try {
-      if (!response.text) throw new Error("No response text from analysis");
-      const result = JSON.parse(response.text);
+      const responseText = response.text;
+      if (!responseText) throw new Error("Empty response from API");
+      const result = JSON.parse(responseText);
       
       // 2. Extract architecture data for visualization
       const nodes: ArchitectureNode[] = [];
@@ -161,6 +162,8 @@ export class AIService {
     });
 
     const response = await chat.sendMessage({ message });
-    return response.text || "No response generated";
+    const responseText = response.text;
+    if (!responseText) throw new Error("Empty response from chat API");
+    return responseText;
   }
 }

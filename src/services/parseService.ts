@@ -26,14 +26,8 @@ export class ParserService {
     
     lines.forEach((line, index) => {
       const match = line.match(functionRegex);
-      if (match) {
-        // If we were already in a chunk, close it
-        if (currentChunk) {
-          currentChunk.endLine = index;
-          currentChunk.content = lines.slice(currentChunk.startLine! - 1, index).join('\n');
-          chunks.push(currentChunk as CodeChunk);
-        }
-        
+      if (match && currentChunk === null) {
+        // Start a new chunk
         const name = match[1] || match[2] || match[3] || match[4];
         const type = match[3] ? 'class' : 'function';
         
@@ -42,21 +36,42 @@ export class ParserService {
           type,
           name,
           startLine: index + 1,
+          endLine: index + 1,
+          content: ''
         };
       }
       
-      // If chunk is getting too long, or it's the end of the file
+      // If chunk is getting too long, close it
       if (currentChunk && (index + 1 - currentChunk.startLine! > 100)) {
-        currentChunk.endLine = index + 1;
-        currentChunk.content = lines.slice(currentChunk.startLine! - 1, index + 1).join('\n');
+        currentChunk.endLine = index;
+        currentChunk.content = lines.slice(currentChunk.startLine! - 1, index).join('\n');
         chunks.push(currentChunk as CodeChunk);
         currentChunk = null;
+      }
+      
+      // If we encounter a function/class while in a chunk, close previous chunk
+      if (match && currentChunk !== null && currentChunk.startLine !== index + 1) {
+        currentChunk.endLine = index;
+        currentChunk.content = lines.slice(currentChunk.startLine! - 1, index).join('\n');
+        chunks.push(currentChunk as CodeChunk);
+        
+        // Start new chunk
+        const name = match[1] || match[2] || match[3] || match[4];
+        const type = match[3] ? 'class' : 'function';
+        currentChunk = {
+          path: file.path,
+          type,
+          name,
+          startLine: index + 1,
+          endLine: index + 1,
+          content: ''
+        };
       }
     });
     
     if (currentChunk) {
       currentChunk.endLine = lines.length;
-      currentChunk.content = lines.slice(currentChunk.startLine! - 1, lines.length).join('\n');
+      currentChunk.content = lines.slice(currentChunk.startLine - 1, lines.length).join('\n');
       chunks.push(currentChunk as CodeChunk);
     }
     

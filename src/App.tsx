@@ -30,12 +30,13 @@ import {
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { AIService } from './services/aiService';
 import { FileData, AnalysisResult, ChatMessage, ProjectStats } from './types';
 import { ArchitectureGraph } from './components/architectureGraph.tsx';
 
 // --- Components ---
 
-const FileUploader = ({ onUpload }: { onUpload: (data: { files: FileData[], projectName: string, stats: ProjectStats, analysis: AnalysisResult }) => void }) => {
+const FileUploader = ({ onUpload }: { onUpload: (data: { files: FileData[], projectName: string, stats: ProjectStats }) => void }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,10 +59,7 @@ const FileUploader = ({ onUpload }: { onUpload: (data: { files: FileData[], proj
         body: formData,
       });
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'Failed to upload file');
-      }
+      if (!response.ok) throw new Error('Failed to upload file');
 
       const data = await response.json();
       onUpload(data);
@@ -395,32 +393,37 @@ export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<'analysis' | 'visualization'>('analysis');
 
-  const handleUpload = async (data: { files: FileData[], projectName: string, stats: ProjectStats, analysis: AnalysisResult }) => {
-    setProjectData({ files: data.files, projectName: data.projectName, stats: data.stats });
-    setAnalysis(data.analysis);
-    setChatHistory([{ 
-      role: 'model', 
-      content: `Hello! I've analyzed **${data.projectName}**. I've indexed ${data.files.length} files and generated a semantic map of your codebase. I can help you understand the architecture, logic, or specific files. What would you like to know?`, 
-      timestamp: new Date().toISOString() 
-    }]);
+  const handleUpload = async (data: { files: FileData[], projectName: string, stats: ProjectStats }) => {
+    setProjectData(data);
+    setIsAnalyzing(true);
+    try {
+      // Parallelize initialization and analysis
+      const [analysisResult] = await Promise.all([
+        AIService.analyzeProject(data.files),
+        AIService.initialize(data.files)
+      ]);
+      
+      setAnalysis(analysisResult);
+      setChatHistory([{ 
+        role: 'model', 
+        content: `Hello! I've analyzed **${data.projectName}**. I've indexed ${data.files.length} files and generated a semantic map of your codebase. I can help you understand the architecture, logic, or specific files. What would you like to know?`, 
+        timestamp: new Date().toISOString() 
+      }]);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   const handleSendMessage = async (msg: string) => {
     if (!projectData) return;
     const userMsg: ChatMessage = { role: 'user', content: msg, timestamp: new Date().toISOString() };
     setChatHistory(prev => [...prev, userMsg]);
-
+    
     try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: msg, history: chatHistory.concat(userMsg) })
-      });
-
-      if (!response.ok) throw new Error('Failed to get chat response');
-      const data = await response.json();
-
-      setChatHistory(prev => [...prev, { role: 'model', content: data.reply || "I'm sorry, I couldn't generate a response.", timestamp: new Date().toISOString() }]);
+      const response = await AIService.chat(projectData.files, msg, chatHistory.concat(userMsg));
+      setChatHistory(prev => [...prev, { role: 'model', content: response, timestamp: new Date().toISOString() }]);
     } catch (error) {
       console.error(error);
       setChatHistory(prev => [...prev, { role: 'model', content: "I'm sorry, I encountered an error while processing your request.", timestamp: new Date().toISOString() }]);
