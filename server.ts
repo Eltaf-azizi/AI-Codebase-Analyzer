@@ -4,7 +4,6 @@ import path from "path";
 import multer from "multer";
 import AdmZip from "adm-zip";
 import { fileURLToPath } from "url";
-import fs from "fs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
