@@ -1,10 +1,6 @@
 import { GoogleGenAI } from "@google/genai";
 
-const apiKey = process.env.GEMINI_API_KEY;
-if (!apiKey) {
-  throw new Error("GEMINI_API_KEY is required for Gemini AI API calls.");
-}
-const ai = new GoogleGenAI({ apiKey });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
 export interface VectorEntry {
   id: string;
@@ -28,14 +24,11 @@ export class VectorStore {
       });
 
       const embeddings = result.embeddings;
-      if (!embeddings) throw new Error("No embeddings returned");
       for (let j = 0; j < batch.length; j++) {
-        const embedding = embeddings[j]?.values;
-        if (!embedding) throw new Error("Missing embedding values");
         this.entries.push({
           id: entries[i + j].id,
           metadata: entries[i + j].metadata,
-          embedding,
+          embedding: embeddings[j].values,
         });
       }
     }
@@ -47,10 +40,7 @@ export class VectorStore {
       contents: [query],
     });
 
-    const embeddings = result.embeddings;
-    if (!embeddings || !embeddings[0]) throw new Error("No query embedding");
-    const queryEmbedding = embeddings[0].values;
-    if (!queryEmbedding) throw new Error("No query embedding values");
+    const queryEmbedding = result.embeddings[0].values;
     
     const scoredEntries = this.entries.map(entry => ({
       entry,
