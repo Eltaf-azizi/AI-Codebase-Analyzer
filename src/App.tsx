@@ -410,13 +410,7 @@ export default function App() {
         timestamp: new Date().toISOString() 
       }]);
     } catch (error) {
-      console.error('Analysis error:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred during analysis';
-      setChatHistory([{ 
-        role: 'model', 
-        content: `⚠️ Analysis Error: ${errorMessage}\n\nTroubleshooting tips:\n- Ensure your project is a valid ZIP file\n- Check that your Gemini API key is set correctly\n- Try with a smaller project if this is very large`, 
-        timestamp: new Date().toISOString() 
-      }]);
+      console.error(error);
     } finally {
       setIsAnalyzing(false);
     }
