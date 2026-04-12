@@ -1,20 +1,21 @@
 import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import { FileData, AnalysisResult, ChatMessage, ArchitectureNode, ArchitectureLink } from "../types";
-import { ParserService } from "./parserService";
+import { ParserService } from "./parseService";
 import { vectorStore } from "./vectorStore";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  throw new Error("GEMINI_API_KEY is required for Gemini AI API calls.");
+}
+const ai = new GoogleGenAI({ apiKey });
 
 export class AIService {
   private static readonly MODEL_NAME = "gemini-3-flash-preview";
-  private static isInitialized = false;
 
   /**
    * Initializes the vector store with codebase chunks.
    */
   static async initialize(files: FileData[]) {
-    if (this.isInitialized) return;
-    
     vectorStore.clear();
     const chunks = files.flatMap(file => ParserService.chunkFile(file));
     
@@ -28,8 +29,6 @@ export class AIService {
         content: chunk.content // Store content for context retrieval
       }
     })));
-
-    this.isInitialized = true;
   }
   
   /**

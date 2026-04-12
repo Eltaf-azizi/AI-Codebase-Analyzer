@@ -1,6 +1,10 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+const apiKey = process.env.GEMINI_API_KEY;
+if (!apiKey) {
+  throw new Error("GEMINI_API_KEY is required for Gemini AI API calls.");
+}
+const ai = new GoogleGenAI({ apiKey });
 
 export interface VectorEntry {
   id: string;
