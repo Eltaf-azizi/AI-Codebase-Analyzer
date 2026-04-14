@@ -1,25 +1,45 @@
 # AI Codebase Analyzer
 
-AI Codebase Analyzer is a browser-based tool for uploading a ZIP archive of a codebase and receiving instant AI-generated insights about architecture, security, logic flow, and file relationships.
+AI Codebase Analyzer is a local web application for uploading a ZIP archive of a codebase and receiving instant AI-generated insights into architecture, security, logic flow, and file relationships.
 
-##  Features
+## Features
 
-- ZIP upload and project ingestion via a secure Express endpoint
-- Searchable file tree viewer with syntax-highlighted source preview
-- AI-powered project summary, architecture analysis, feature extraction, and security review
-- Interactive chat interface for asking questions about the codebase
-- Dependency graph visualization powered by D3
-- Semantic search using Google Gemini embeddings for relevant code retrieval
+- Upload a codebase ZIP and ingest files through an Express API
+- Interactive UI for browsing the repository structure and previewing source files
+- AI-powered overall project analysis with architecture summary, feature detection, improvement suggestions, and security review
+- Semantic search and chat interface for asking questions about the uploaded codebase
+- Visual dependency graph powered by D3
+- File chunking and embeddings using Google Gemini for RAG-style code search
 
+## Architecture Overview
 
-##  Project Structure
+The application is split into a frontend React UI and a backend Express server.
 
-- `server.ts`  Express server with Vite middleware, ZIP upload handling, and project parsing
-- `src/App.tsx`  Main React UI for upload flow, analysis dashboard, chat panel, and code viewer
-- `src/services/aiService.ts`  AI orchestration, analysis generation, semantic chat, and vector store initialization
-- `src/services/parseService.ts`  File chunking and dependency extraction utilities
-- `src/services/vectorStore.ts`  In-memory embedding index and semantic search implementation
-- `src/components/architectureGraph.tsx`  D3-based architecture/dependency graph renderer
-- `src/types/index.ts`  Shared TypeScript interfaces for project data and analysis output
-- `src/index.css`  Tailwind CSS theme and markdown styling
+- `server.ts`
+  - Runs an Express server on port `3000`
+  - Accepts `.zip` uploads via `/api/upload`
+  - Extracts project files while excluding binary assets and common ignore directories
+  - Serves Vite middleware in development or static files in production
 
+- `src/App.tsx`
+  - Provides upload flow, analysis dashboard, file explorer, code preview, and chat interface
+  - Uses Tailwind CSS and motion animations for a polished developer experience
+
+- `src/services/aiService.ts`
+  - Initializes embeddings and RAG search context
+  - Generates high-level analysis using Google Gemini
+  - Handles interactive chat queries with project-specific context
+
+- `src/services/parseService.ts`
+  - Splits files into code chunks for embedding
+  - Detects imports/dependencies from source files
+
+- `src/services/vectorStore.ts`
+  - Stores in-memory embeddings for semantic search
+  - Performs cosine similarity search for query relevance
+
+- `src/components/architectureGraph.tsx`
+  - Renders the codebase dependency graph using D3
+
+- `src/types/index.ts`
+  - Defines shared TypeScript models used across the app
