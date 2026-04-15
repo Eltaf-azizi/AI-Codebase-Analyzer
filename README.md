@@ -43,3 +43,38 @@ The application is split into a frontend React UI and a backend Express server.
 
 - `src/types/index.ts`
   - Defines shared TypeScript models used across the app
+
+## Installation
+
+1. Clone the repository:
+
+```bash
+git clone <repository-url>
+cd "AI Codebase Analyzer"
+```
+
+2. Install dependencies:
+
+```bash
+npm install
+```
+
+3. Set the Gemini API key in your environment:
+
+For PowerShell:
+
+```powershell
+$env:GEMINI_API_KEY = "your_api_key_here"
+```
+
+For Command Prompt:
+
+```cmd
+set GEMINI_API_KEY=your_api_key_here
+```
+
+For a `.env` loader (not included by default):
+
+```env
+GEMINI_API_KEY=your_api_key_here
+```
