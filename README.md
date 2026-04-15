@@ -78,3 +78,15 @@ For a `.env` loader (not included by default):
 ```env
 GEMINI_API_KEY=your_api_key_here
 ```
+
+
+## Development
+
+Run the server and frontend in development mode:
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000` in your browser.
+
