@@ -1,92 +1,35 @@
 # AI Codebase Analyzer
 
-AI Codebase Analyzer is a local web application for uploading a ZIP archive of a codebase and receiving instant AI-generated insights into architecture, security, logic flow, and file relationships.
+AI Codebase Analyzer is a local developer tool that turns a ZIP archive of a codebase into instant architecture, security, and logic insights using AI. It combines a React frontend, an Express backend, Google Gemini embeddings, and a semantic search/chat interface to help engineers understand unknown repositories faster.
 
-## Features
+## 🚀 What This Project Does
 
-- Upload a codebase ZIP and ingest files through an Express API
-- Interactive UI for browsing the repository structure and previewing source files
-- AI-powered overall project analysis with architecture summary, feature detection, improvement suggestions, and security review
-- Semantic search and chat interface for asking questions about the uploaded codebase
-- Visual dependency graph powered by D3
-- File chunking and embeddings using Google Gemini for RAG-style code search
+- Accepts a `.zip` archive of a source code repository through a browser upload
+- Extracts text-based source files while excluding common binary and dependency folders
+- Builds an in-memory vector store of code chunks for semantic search
+- Generates a structured project analysis with architecture, feature detection, security observations, and improvement recommendations
+- Provides an interactive file explorer, syntax-highlighted preview, and visual dependency graph
+- Supports conversational codebase queries using AI-powered retrieval augmented generation (RAG)
 
-## Architecture Overview
+## 📦 Features
 
-The application is split into a frontend React UI and a backend Express server.
+- ZIP upload and backend ingestion via `POST /api/upload`
+- File filtering for `node_modules`, `.git`, `dist`, common binaries, and unreadable files
+- Intelligent file chunking for functions, classes, and modules
+- Dependency extraction from import/require statements
+- Google Gemini model integration for summary and chat
+- Semantic search using cosine similarity over embedded code chunks
+- Interactive UI with drag-and-drop upload, file search, and chat history
+- D3-based architecture dependency graph visualization
+
+## 🧠 Architecture Overview
+
+### Backend
 
 - `server.ts`
-  - Runs an Express server on port `3000`
-  - Accepts `.zip` uploads via `/api/upload`
-  - Extracts project files while excluding binary assets and common ignore directories
-  - Serves Vite middleware in development or static files in production
-
-- `src/App.tsx`
-  - Provides upload flow, analysis dashboard, file explorer, code preview, and chat interface
-  - Uses Tailwind CSS and motion animations for a polished developer experience
-
-- `src/services/aiService.ts`
-  - Initializes embeddings and RAG search context
-  - Generates high-level analysis using Google Gemini
-  - Handles interactive chat queries with project-specific context
-
-- `src/services/parseService.ts`
-  - Splits files into code chunks for embedding
-  - Detects imports/dependencies from source files
-
-- `src/services/vectorStore.ts`
-  - Stores in-memory embeddings for semantic search
-  - Performs cosine similarity search for query relevance
-
-- `src/components/architectureGraph.tsx`
-  - Renders the codebase dependency graph using D3
-
-- `src/types/index.ts`
-  - Defines shared TypeScript models used across the app
-
-## Installation
-
-1. Clone the repository:
-
-```bash
-git clone <repository-url>
-cd "AI Codebase Analyzer"
-```
-
-2. Install dependencies:
-
-```bash
-npm install
-```
-
-3. Set the Gemini API key in your environment:
-
-For PowerShell:
-
-```powershell
-$env:GEMINI_API_KEY = "your_api_key_here"
-```
-
-For Command Prompt:
-
-```cmd
-set GEMINI_API_KEY=your_api_key_here
-```
-
-For a `.env` loader (not included by default):
-
-```env
-GEMINI_API_KEY=your_api_key_here
-```
-
-
-## Development
-
-Run the server and frontend in development mode:
-
-```bash
-npm run dev
-```
-
-Open `http://localhost:3000` in your browser.
-
+  - Express server listening on port `3000`
+  - Uses `multer` memory storage for file uploads
+  - Extracts ZIP contents with `adm-zip`
+  - Filters out excluded directories and binary extensions
+  - Provides a health endpoint at `/api/health`
+  - Uses Vite middleware in development and serves static files in production
