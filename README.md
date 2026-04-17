@@ -33,3 +33,32 @@ AI Codebase Analyzer is a local developer tool that turns a ZIP archive of a cod
   - Filters out excluded directories and binary extensions
   - Provides a health endpoint at `/api/health`
   - Uses Vite middleware in development and serves static files in production
+
+
+### Frontend
+
+- `src/App.tsx`
+  - Main React application and page layout
+  - Upload flow, analysis dashboard, file explorer, code preview, and chat interface
+  - Uses `motion` for animation and `Tailwind CSS` for styling
+  - Includes syntax highlighting via `react-syntax-highlighter`
+
+- `src/components/architectureGraph.tsx`
+  - Visualizes file dependency relationships using D3
+
+### AI + Search Services
+
+- `src/services/aiService.ts`
+  - Initializes the AI model client and vector store
+  - Generates structured project analysis
+  - Answers chat queries using relevant context from the codebase
+
+- `src/services/parseService.ts`
+  - Splits files into code chunks by functions/classes/modules
+  - Detects imports and external dependency references
+
+- `src/services/vectorStore.ts`
+  - Manages in-memory embeddings and similarity search
+
+- `src/types/index.ts`
+  - Shared TypeScript interfaces for files, analysis results, messages, and graph data
