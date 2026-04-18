@@ -62,3 +62,27 @@ AI Codebase Analyzer is a local developer tool that turns a ZIP archive of a cod
 
 - `src/types/index.ts`
   - Shared TypeScript interfaces for files, analysis results, messages, and graph data
+
+
+## 📁 Project Structure
+
+```text
+.
+├── package.json
+├── server.ts
+├── tsconfig.json
+├── vite.config.ts
+├── index.html
+├── src
+│   ├── App.tsx
+│   ├── main.tsx
+│   ├── index.css
+│   ├── components
+│   │   └── architectureGraph.tsx
+│   ├── services
+│   │   ├── aiService.ts
+│   │   ├── parseService.ts
+│   │   └── vectorStore.ts
+│   └── types
+│       └── index.ts
+```
