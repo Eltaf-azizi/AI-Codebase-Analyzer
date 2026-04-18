@@ -86,3 +86,35 @@ AI Codebase Analyzer is a local developer tool that turns a ZIP archive of a cod
 │   └── types
 │       └── index.ts
 ```
+
+## ⚙️ Requirements
+
+- Node.js 18 or newer
+- npm
+- Google Gemini API key
+
+## 🔧 Setup
+
+1. Install dependencies:
+
+```bash
+npm install
+```
+
+2. Configure the Gemini API key:
+
+```powershell
+$env:GEMINI_API_KEY = "your_api_key_here"
+```
+
+3. Start development mode:
+
+```bash
+npm run dev
+```
+
+4. Open your browser at:
+
+```text
+http://localhost:3000
+```
