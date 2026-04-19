@@ -1,4 +1,4 @@
-# AI Codebase Analyzer
+<h1 align="center">AI Codebase Analyzer</h1>
 
 AI Codebase Analyzer is a local developer tool that turns a ZIP archive of a codebase into instant architecture, security, and logic insights using AI. It combines a React frontend, an Express backend, Google Gemini embeddings, and a semantic search/chat interface to help engineers understand unknown repositories faster.
 
@@ -118,3 +118,12 @@ npm run dev
 ```text
 http://localhost:3000
 ```
+
+## 🧪 Available Scripts
+
+- `npm run dev` — Start the Express + Vite development server
+- `npm run build` — Build the frontend for production with Vite
+- `npm run preview` — Preview the production build locally
+- `npm run clean` — Delete the generated `dist` folder
+- `npm run lint` — Run TypeScript type checking with `tsc --noEmit`
+
