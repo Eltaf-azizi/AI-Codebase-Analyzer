@@ -135,3 +135,10 @@ http://localhost:3000
 4. Wait for the backend to extract files and generate analysis.
 5. Browse the file explorer, inspect source files, and use the AI chat for questions.
 
+## 🧩 How It Works
+
+- The backend loads the ZIP and extracts readable text files.
+- Source files are chunked by common code boundaries (functions, classes, modules).
+- Code chunks are embedded and stored for semantic similarity search.
+- The AI service uses Gemini to produce a project summary and to answer user queries with relevant context.
+- The frontend displays analysis, file previews, search, and dependency graph visualizations.
