@@ -142,3 +142,16 @@ http://localhost:3000
 - Code chunks are embedded and stored for semantic similarity search.
 - The AI service uses Gemini to produce a project summary and to answer user queries with relevant context.
 - The frontend displays analysis, file previews, search, and dependency graph visualizations.
+
+## 🔐 Notes
+
+- The current upload limit is 100MB for ZIP files.
+- The backend skips large binary assets and non-text files when extracting ZIP contents.
+- The AI analysis uses local in-memory storage and does not persist data between sessions.
+
+## 🛠️ Development Notes
+
+- The repository is intentionally designed to be a local prototype / developer utility.
+- To extend analysis capabilities, update `src/services/aiService.ts` with new prompts or structured schemas.
+- To improve chunking, enhance `src/services/parseService.ts` with language-specific parsers.
+- To persist vector data, replace the in-memory store in `src/services/vectorStore.ts`.
