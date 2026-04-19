@@ -155,3 +155,17 @@ http://localhost:3000
 - To extend analysis capabilities, update `src/services/aiService.ts` with new prompts or structured schemas.
 - To improve chunking, enhance `src/services/parseService.ts` with language-specific parsers.
 - To persist vector data, replace the in-memory store in `src/services/vectorStore.ts`.
+
+## 📚 Dependencies
+
+Key runtime dependencies:
+
+- `react`, `react-dom` — UI
+- `vite`, `@vitejs/plugin-react` — build tooling
+- `express` — backend server
+- `adm-zip` — ZIP extraction
+- `multer` — upload handling
+- `@google/genai` — Gemini AI client
+- `d3` — architecture graph rendering
+- `react-markdown`, `react-syntax-highlighter` — code preview and markdown rendering
+- `tailwindcss`, `@tailwindcss/vite` — styling
