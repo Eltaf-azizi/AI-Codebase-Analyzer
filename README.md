@@ -127,3 +127,11 @@ http://localhost:3000
 - `npm run clean` — Delete the generated `dist` folder
 - `npm run lint` — Run TypeScript type checking with `tsc --noEmit`
 
+## 💡 Usage
+
+1. Create a `.zip` archive of the repository or codebase you want to analyze.
+2. Open the app in your browser.
+3. Drag and drop the ZIP or click to upload.
+4. Wait for the backend to extract files and generate analysis.
+5. Browse the file explorer, inspect source files, and use the AI chat for questions.
+
