@@ -1,4 +1,4 @@
-# AI Codebase Analyzer
+<h1 align="center">AI Codebase Analyzer</h1>
 
 AI Codebase Analyzer is a local developer tool that turns a ZIP archive of a codebase into instant architecture, security, and logic insights using AI. It combines a React frontend, an Express backend, Google Gemini embeddings, and a semantic search/chat interface to help engineers understand unknown repositories faster.
 
@@ -118,3 +118,54 @@ npm run dev
 ```text
 http://localhost:3000
 ```
+
+## 🧪 Available Scripts
+
+- `npm run dev` — Start the Express + Vite development server
+- `npm run build` — Build the frontend for production with Vite
+- `npm run preview` — Preview the production build locally
+- `npm run clean` — Delete the generated `dist` folder
+- `npm run lint` — Run TypeScript type checking with `tsc --noEmit`
+
+## 💡 Usage
+
+1. Create a `.zip` archive of the repository or codebase you want to analyze.
+2. Open the app in your browser.
+3. Drag and drop the ZIP or click to upload.
+4. Wait for the backend to extract files and generate analysis.
+5. Browse the file explorer, inspect source files, and use the AI chat for questions.
+
+## 🧩 How It Works
+
+- The backend loads the ZIP and extracts readable text files.
+- Source files are chunked by common code boundaries (functions, classes, modules).
+- Code chunks are embedded and stored for semantic similarity search.
+- The AI service uses Gemini to produce a project summary and to answer user queries with relevant context.
+- The frontend displays analysis, file previews, search, and dependency graph visualizations.
+
+## 🔐 Notes
+
+- The current upload limit is 100MB for ZIP files.
+- The backend skips large binary assets and non-text files when extracting ZIP contents.
+- The AI analysis uses local in-memory storage and does not persist data between sessions.
+
+## 🛠️ Development Notes
+
+- The repository is intentionally designed to be a local prototype / developer utility.
+- To extend analysis capabilities, update `src/services/aiService.ts` with new prompts or structured schemas.
+- To improve chunking, enhance `src/services/parseService.ts` with language-specific parsers.
+- To persist vector data, replace the in-memory store in `src/services/vectorStore.ts`.
+
+## 📚 Dependencies
+
+Key runtime dependencies:
+
+- `react`, `react-dom` — UI
+- `vite`, `@vitejs/plugin-react` — build tooling
+- `express` — backend server
+- `adm-zip` — ZIP extraction
+- `multer` — upload handling
+- `@google/genai` — Gemini AI client
+- `d3` — architecture graph rendering
+- `react-markdown`, `react-syntax-highlighter` — code preview and markdown rendering
+- `tailwindcss`, `@tailwindcss/vite` — styling
