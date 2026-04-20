@@ -4,21 +4,12 @@ import path from "path";
 import multer from "multer";
 import AdmZip from "adm-zip";
 import { fileURLToPath } from "url";
-import dotenv from "dotenv";
-import { AIService } from "./src/services/aiService.js";
-import { FileData, AnalysisResult, ChatMessage } from "./src/types/index.js";
-
-dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = 3000;
-
-// Global state for current project
-let currentFiles: FileData[] = [];
-let currentAnalysis: AnalysisResult | null = null;
 
 // Middleware
 app.use(express.json({ limit: '100mb' }));
@@ -40,7 +31,7 @@ app.post("/api/upload", upload.single("file"), async (req: any, res) => {
     const zip = new AdmZip(req.file.buffer);
     const zipEntries = zip.getEntries();
     
-    const files: FileData[] = [];
+    const files: { path: string; content: string; size: number }[] = [];
     
     // Filter out binary and large files
     const EXCLUDED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.pdf', '.zip', '.exe', '.dll', '.pyc', '.node'];
@@ -64,42 +55,17 @@ app.post("/api/upload", upload.single("file"), async (req: any, res) => {
       }
     });
 
-    // Initialize AI service with files
-    await AIService.initialize(files);
-    currentFiles = files;
-
-    // Generate analysis
-    const analysis = await AIService.analyzeProject(files);
-    currentAnalysis = analysis;
-
     res.json({ 
       projectName: req.file.originalname.replace('.zip', ''),
       files,
       stats: {
         totalFiles: files.length,
         totalSize: files.reduce((acc, f) => acc + f.size, 0)
-      },
-      analysis
+      }
     });
   } catch (error) {
     console.error("Upload error:", error);
     res.status(500).json({ error: "Failed to process ZIP file" });
-  }
-});
-
-// Chat endpoint
-app.post("/api/chat", async (req, res) => {
-  try {
-    const { message, history }: { message: string; history: ChatMessage[] } = req.body;
-    if (!message || !currentFiles.length) {
-      return res.status(400).json({ error: "No message or no files loaded" });
-    }
-
-    const reply = await AIService.chat(currentFiles, message, history);
-    res.json({ reply });
-  } catch (error) {
-    console.error("Chat error:", error);
-    res.status(500).json({ error: "Failed to process chat message" });
   }
 });
 
