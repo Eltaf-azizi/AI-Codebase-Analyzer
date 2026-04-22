@@ -37,7 +37,7 @@ app.post("/api/upload", upload.single("file"), async (req: any, res) => {
     const EXCLUDED_EXTENSIONS = ['.png', '.jpg', '.jpeg', '.gif', '.pdf', '.zip', '.exe', '.dll', '.pyc', '.node'];
     const EXCLUDED_DIRS = ['node_modules', '.git', 'dist', 'build', '.next', '.cache', 'venv', '__pycache__'];
 
-    zipEntries.forEach((entry) => {
+    zipEntries.forEach((entry: any) => {
       const isExcludedDir = EXCLUDED_DIRS.some(dir => entry.entryName.includes(`${dir}/`));
       const isExcludedExt = EXCLUDED_EXTENSIONS.some(ext => entry.entryName.toLowerCase().endsWith(ext));
       
