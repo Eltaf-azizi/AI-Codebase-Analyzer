@@ -2,6 +2,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { FileData, AnalysisResult, ChatMessage, ArchitectureNode, ArchitectureLink } from "../types";
 import { ParserService } from "./parseService";
 import { vectorStore } from "./vectorStore";
+import { dedupeCandidates, pickKeywordFiles, tokenizeQuery } from "../lib/ranking";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
@@ -15,16 +16,20 @@ export class AIService {
     vectorStore.clear();
     const chunks = files.flatMap(file => ParserService.chunkFile(file));
     
-    await vectorStore.addEntries(chunks.map((chunk, i) => ({
+    const stats = await vectorStore.addEntries(chunks.map((chunk, i) => ({
       id: `${chunk.path}-${i}`,
-      text: `File: ${chunk.path}\nType: ${chunk.type}\nName: ${chunk.name || 'N/A'}\nContent:\n${chunk.content}`,
+      text: `File: ${chunk.path}\nType: ${chunk.type}\nLanguage: ${chunk.language}\nName: ${chunk.name || 'N/A'}\nContent:\n${chunk.content}`,
       metadata: { 
         path: chunk.path, 
         startLine: chunk.startLine, 
         endLine: chunk.endLine,
-        content: chunk.content // Store content for context retrieval
+        content: chunk.content,
+        type: chunk.type,
+        language: chunk.language,
+        charCount: chunk.charCount,
       }
     })));
+    return stats;
   }
   
   /**
@@ -47,6 +52,8 @@ export class AIService {
       - Potential improvements (performance, readability).
       - Security analysis (vulnerabilities, hardcoded secrets).
     `;
+
+    const indexing = await this.initialize(files);
 
     const response = await ai.models.generateContent({
       model: this.MODEL_NAME,
@@ -98,6 +105,7 @@ export class AIService {
 
       return {
         ...result,
+        indexing,
         architectureData: { nodes, links }
       };
     } catch (e) {
@@ -110,22 +118,36 @@ export class AIService {
    * Handles interactive chat with RAG.
    */
   static async chat(files: FileData[], message: string, history: ChatMessage[]): Promise<string> {
-    // 1. Semantic search for relevant chunks
-    const searchResults = await vectorStore.search(message, 10);
-    
-    const context = searchResults
-      .map(res => `File: ${res.metadata.path}\nLines: ${res.metadata.startLine}-${res.metadata.endLine}\nContent:\n${res.metadata.content || res.id}`) // We should store content in metadata if we want it here easily
-      .join('\n\n---\n\n');
+    // 1) Ensure an index exists for retrieval
+    if (vectorStore.getEntryCount() === 0) {
+      await this.initialize(files);
+    }
 
-    // Fallback to keyword search if semantic search is too sparse or we want more context
-    const keywords = message.toLowerCase().split(/\W+/).filter(k => k.length > 2);
-    const keywordFiles = files.filter(f => {
-      const pathLower = f.path.toLowerCase();
-      return keywords.some(k => pathLower.includes(k));
-    }).slice(0, 5);
+    // 2) Hybrid retrieval (semantic + keyword/path hint)
+    const searchResults = await vectorStore.search(message, 14);
+    const keywords = tokenizeQuery(message);
+    const keywordFiles = pickKeywordFiles(files, keywords, 8);
 
-    const keywordContext = keywordFiles
-      .map(f => `File: ${f.path}\nContent:\n${f.content.slice(0, 4000)}`)
+    const semanticCandidates = searchResults.map((res, index) => {
+      const path = String(res.metadata.path ?? "unknown");
+      const content = String(res.metadata.content ?? "");
+      const startLine = String(res.metadata.startLine ?? "?");
+      const endLine = String(res.metadata.endLine ?? "?");
+      return {
+        path,
+        score: 100 - index,
+        content: `File: ${path}\nLines: ${startLine}-${endLine}\nContent:\n${content}`,
+      };
+    });
+
+    const keywordCandidates = keywordFiles.map((file, index) => ({
+      path: file.path,
+      score: 60 - index,
+      content: `File: ${file.path}\nContent:\n${file.content.slice(0, 3500)}`,
+    }));
+
+    const combinedContext = dedupeCandidates([...semanticCandidates, ...keywordCandidates], 12)
+      .map(entry => entry.content)
       .join('\n\n---\n\n');
 
     const allFilePaths = files.map(f => f.path).join('\n');
@@ -137,29 +159,38 @@ export class AIService {
       YOUR TASK:
       - If the user asks for a file or keyword, search through the provided file list and relevant content.
       - ALWAYS display the full file path for any file you mention.
+      - Do not invent files or paths. If uncertain, say what is uncertain.
       - If multiple files match a search query (by name or content), list ALL of them with their full paths.
       - If the user provides a code snippet, analyze it and explain its purpose, functionality, and suggest potential improvements.
       - Provide relevant code snippets and file paths from the project when applicable.
+      - Keep answers concise but concrete. Prefer grounded statements over speculation.
       
       ALL FILES IN PROJECT:
       ${allFilePaths}
       
       RELEVANT CONTEXT (Semantic Search & Keyword Match):
-      ${context}
-      ${keywordContext}
+      ${combinedContext}
     `;
 
-    const chat = ai.chats.create({
-      model: this.MODEL_NAME,
-      config: { systemInstruction },
-      history: history.map(h => ({
-        role: h.role,
-        parts: [{ text: h.content }]
-      }))
-    });
+    try {
+      const chat = ai.chats.create({
+        model: this.MODEL_NAME,
+        config: { systemInstruction },
+        history: history.map(h => ({
+          role: h.role,
+          parts: [{ text: h.content }]
+        }))
+      });
 
-    const response = await chat.sendMessage({ message });
-    const text = response.text;
-    return text || "No response generated.";
+      const response = await chat.sendMessage({ message });
+      const text = response.text;
+      return text || "No response generated.";
+    } catch (error) {
+      console.error("Chat generation failed:", error);
+      if (!combinedContext) {
+        return "I could not build context for that question yet. Please try rephrasing your query or ask about a specific file path.";
+      }
+      return `I hit a temporary model error, but I found relevant context in this codebase. Try again with a targeted request like: "Explain ${keywordFiles[0]?.path ?? files[0]?.path ?? "a specific file"}".`;
+    }
   }
 }
