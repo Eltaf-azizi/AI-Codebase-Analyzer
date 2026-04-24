@@ -35,7 +35,7 @@ import { ArchitectureGraph } from './components/architectureGraph.tsx';
 
 // --- Components ---
 
-const FileUploader = ({ onUpload }: { onUpload: (data: { files: FileData[], projectName: string, stats: ProjectStats }) => void }) => {
+const FileUploader = ({ onUpload }: { onUpload: (data: { files: FileData[], projectName: string, stats: ProjectStats, analysis?: AnalysisResult }) => void }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -395,9 +395,11 @@ export default function App() {
   const [isChatOpen, setIsChatOpen] = useState(true);
   const [activeTab, setActiveTab] = useState<'analysis' | 'visualization'>('analysis');
 
-  const handleUpload = async (data: { files: FileData[], projectName: string, stats: ProjectStats, analysis: AnalysisResult }) => {
+  const handleUpload = async (data: { files: FileData[], projectName: string, stats: ProjectStats, analysis?: AnalysisResult }) => {
     setProjectData({ files: data.files, projectName: data.projectName, stats: data.stats });
-    setAnalysis(data.analysis);
+    if (data.analysis) {
+      setAnalysis(data.analysis);
+    }
     setChatHistory([{ 
       role: 'model', 
       content: `Hello! I've analyzed **${data.projectName}**. I've indexed ${data.files.length} files and generated a semantic map of your codebase. I can help you understand the architecture, logic, or specific files. What would you like to know?`, 

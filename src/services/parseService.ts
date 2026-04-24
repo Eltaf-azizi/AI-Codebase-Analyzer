@@ -23,6 +23,7 @@ export class ParserService {
     const functionRegex = /^(?:async\s+)?function\s+(\w+)|(\w+)\s*[:=]\s*(?:async\s*)?\([^)]*\)\s*=>|class\s+(\w+)|def\s+(\w+)\s*\(/;
     
     let currentChunk: Partial<CodeChunk> | null = null;
+    let hasChunk = false;
     
     lines.forEach((line, index) => {
       const match = line.match(functionRegex);
@@ -30,7 +31,7 @@ export class ParserService {
         // If we were already in a chunk, close it
         if (currentChunk) {
           currentChunk.endLine = index;
-          currentChunk.content = lines.slice(currentChunk.startLine! - 1, index).join('\n');
+          currentChunk.content = lines.slice((currentChunk.startLine ?? 1) - 1, index).join('\n');
           chunks.push(currentChunk as CodeChunk);
         }
         
@@ -43,21 +44,37 @@ export class ParserService {
           name,
           startLine: index + 1,
         };
+        hasChunk = true;
       }
       
       // If chunk is getting too long, or it's the end of the file
-      if (currentChunk && (index + 1 - currentChunk.startLine! > 100)) {
-        currentChunk.endLine = index + 1;
-        currentChunk.content = lines.slice(currentChunk.startLine! - 1, index + 1).join('\n');
-        chunks.push(currentChunk as CodeChunk);
+      const chunk = currentChunk;
+      if (chunk && (index + 1 - (chunk.startLine ?? 0) > 100)) {
+        chunk.endLine = index + 1;
+        chunk.content = lines.slice((chunk.startLine ?? 1) - 1, index + 1).join('\n');
+        chunks.push(chunk as CodeChunk);
         currentChunk = null;
+        hasChunk = false;
       }
     });
     
-    if (currentChunk) {
-      currentChunk.endLine = lines.length;
-      currentChunk.content = lines.slice(currentChunk.startLine! - 1, lines.length).join('\n');
-      chunks.push(currentChunk as CodeChunk);
+    // Handle remaining chunk at end of file
+    if (hasChunk && currentChunk) {
+      // Use type assertion to work around TypeScript narrowing issues
+      const chunk = currentChunk as Partial<CodeChunk>;
+      const chunkPath = chunk.path ?? file.path;
+      const chunkType = chunk.type ?? 'module';
+      const chunkName = chunk.name;
+      const startLine = chunk.startLine ?? 1;
+      const newChunk: CodeChunk = {
+        path: chunkPath,
+        type: chunkType,
+        name: chunkName,
+        startLine: startLine,
+        endLine: lines.length,
+        content: lines.slice(startLine - 1, lines.length).join('\n'),
+      };
+      chunks.push(newChunk);
     }
     
     // If no chunks were found (e.g. small file or no functions), treat whole file as module

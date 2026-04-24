@@ -24,11 +24,17 @@ export class VectorStore {
       });
 
       const embeddings = result.embeddings;
+      if (!embeddings) {
+        console.warn("No embeddings returned");
+        continue;
+      }
       for (let j = 0; j < batch.length; j++) {
+        const values = embeddings[j]?.values;
+        if (!values) continue;
         this.entries.push({
           id: entries[i + j].id,
           metadata: entries[i + j].metadata,
-          embedding: embeddings[j].values,
+          embedding: values,
         });
       }
     }
@@ -40,11 +46,15 @@ export class VectorStore {
       contents: [query],
     });
 
-    const queryEmbedding = result.embeddings[0].values;
+    const embeddings = result.embeddings;
+    if (!embeddings || !embeddings[0]?.values) {
+      return [];
+    }
+    const queryEmbedding = embeddings[0].values;
     
     const scoredEntries = this.entries.map(entry => ({
       entry,
-      score: this.cosineSimilarity(queryEmbedding, entry.embedding),
+      score: entry.embedding ? this.cosineSimilarity(queryEmbedding, entry.embedding) : 0,
     }));
 
     return scoredEntries
