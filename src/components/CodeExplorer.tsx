@@ -69,6 +69,70 @@ export function CodeExplorer({ files, selectedFile, onFileSelect }: CodeExplorer
       return a.localeCompare(b);
     });
     
+    return entries.map(([name, value]) => {
+      const currentPath = path ? `${path}/${name}` : name;
+      const isFile = typeof value === 'object' && value !== null && 'path' in (value as Record<string, unknown>);
+      const isExpanded = expandedFolders.has(currentPath);
+
+      if (isFile) {
+        const file = value as FileData;
+        const isContentMatch =
+          !!searchTerm &&
+          !name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+          file.content.toLowerCase().includes(searchTerm.toLowerCase());
+        return (
+          <motion.div
+            key={currentPath}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            onClick={() => onFileSelect(file)}
+            className={`
+              flex items-center gap-2 px-3 py-1.5 cursor-pointer rounded-lg text-sm transition-all group
+              ${selectedFile?.path === currentPath ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' : isContentMatch ? 'bg-indigo-500/10 text-indigo-300' : 'text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200'}
+            `}
+            style={{ paddingLeft: `${depth * 1.25 + 0.75}rem` }}
+          >
+            <File className={`w-4 h-4 ${isContentMatch ? 'text-indigo-400' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+            <div className="flex flex-col min-w-0">
+              <span className="truncate">{name}</span>
+              {isContentMatch && (
+                <span className="text-[10px] opacity-70 flex items-center gap-1">
+                  <Sparkles className="w-2 h-2" />
+                  Content match
+                </span>
+              )}
+            </div>
+          </motion.div>
+        );
+      }
+
+      return (
+        <div key={currentPath}>
+          <div
+            onClick={() => toggleFolder(currentPath)}
+            className="flex items-center gap-2 px-3 py-1.5 cursor-pointer rounded-lg text-sm text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 transition-colors"
+            style={{ paddingLeft: `${depth * 1.25 + 0.75}rem` }}
+          >
+            {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+            <Folder className="w-4 h-4 text-zinc-600" />
+            <span className="font-medium truncate">{name}</span>
+          </div>
+          <AnimatePresence>
+            {isExpanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                {renderTree(value as Record<string, unknown>, currentPath, depth + 1)}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      );
+    });
+  };
 
   return (
     <div className="flex flex-col h-full bg-zinc-950 border-r border-zinc-900 w-80 shrink-0">
