@@ -9,6 +9,39 @@ export class AIService {
   private static readonly MODEL_NAME = "gemini-3-flash-preview";
   private static readonly MAX_CONTEXT_BLOCKS = 12;
   
+    private static buildChunkText(chunk: ReturnType<typeof ParserService.chunkFile>[number]): string {
+    return [
+      `File: ${chunk.path}`,
+      `Type: ${chunk.type}`,
+      `Language: ${chunk.language}`,
+      `Name: ${chunk.name || "N/A"}`,
+      `Lines: ${chunk.startLine}-${chunk.endLine}`,
+      `Characters: ${chunk.charCount}`,
+      `Content:\n${chunk.content}`,
+    ].join("\n");
+  }
+
+  private static rankByKeywords(files: FileData[], message: string): FileData[] {
+    const keywords = message.toLowerCase().split(/\W+/).filter((k) => k.length > 2);
+    const scored = files.map((file) => {
+      const path = file.path.toLowerCase();
+      const content = file.content.toLowerCase();
+      const score = keywords.reduce((acc, key) => {
+        if (path.includes(key)) return acc + 4;
+        if (content.includes(key)) return acc + 1;
+        return acc;
+      }, 0);
+      return { file, score };
+    });
+
+    return scored
+      .filter((entry) => entry.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 6)
+      .map((entry) => entry.file);
+  }
+
+  
   /**
    * Initializes the vector store with codebase chunks.
    */
