@@ -1,8 +1,7 @@
-import { useState } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Activity, FileArchive, Loader2, Layout, ShieldAlert, Zap } from 'lucide-react';
-import { UploadResponse } from '../types';
-import { API_ENDPOINTS } from '../lib/constants';
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { Activity, FileArchive, Loader2 } from "lucide-react";
+import type { UploadResponse } from "../types";
 
 interface FileUploaderProps {
   onUpload: (data: UploadResponse) => void;
@@ -12,36 +11,34 @@ export function FileUploader({ onUpload }: FileUploaderProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [statusText, setStatusText] = useState('Ready to analyze your repository.');
 
   const handleFile = async (file: File) => {
-    if (!file.name.toLowerCase().endsWith('.zip')) {
-      setError('Please upload a .zip file');
+    if (!file.name.endsWith(".zip")) {
+      setError("Please upload a .zip file");
       return;
     }
 
     setIsLoading(true);
     setError(null);
-    setStatusText('Uploading archive and validating files...');
 
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
     try {
-      const response = await fetch(API_ENDPOINTS.UPLOAD, {
-        method: 'POST',
+      const response = await fetch("/api/upload", {
+        method: "POST",
         body: formData,
       });
 
-      const data = await response.json().catch(() => null);
       if (!response.ok) {
-        throw new Error((data?.error as string) || 'Failed to upload file');
+        const errorText = await response.text();
+        throw new Error(errorText || "Failed to upload file");
       }
 
-      setStatusText('Repository accepted. Building project view...');
-      onUpload(data as UploadResponse);
+      const data = (await response.json()) as UploadResponse;
+      onUpload(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error processing ZIP file. Please try again.');
+      setError("Error processing ZIP file. Please try again.");
       console.error(err);
     } finally {
       setIsLoading(false);
@@ -50,7 +47,11 @@ export function FileUploader({ onUpload }: FileUploaderProps) {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-8 bg-zinc-950 text-zinc-100">
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="text-center mb-12"
+      >
         <div className="flex items-center justify-center gap-3 mb-6">
           <div className="w-12 h-12 rounded-xl bg-indigo-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
             <Activity className="w-7 h-7 text-white" />
@@ -74,11 +75,9 @@ export function FileUploader({ onUpload }: FileUploaderProps) {
           const file = e.dataTransfer.files[0];
           if (file) handleFile(file);
         }}
-        className={`
-          relative w-full max-w-2xl aspect-[16/9] rounded-3xl border-2 border-dashed transition-all duration-300 cursor-pointer
+        className={`relative w-full max-w-2xl aspect-[16/9] rounded-3xl border-2 border-dashed transition-all duration-300 cursor-pointer
           flex flex-col items-center justify-center gap-6 group overflow-hidden
-          ${isDragging ? 'border-indigo-500 bg-indigo-500/5 scale-[1.02]' : 'border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/50'}
-        `}
+          ${isDragging ? "border-indigo-500 bg-indigo-500/5 scale-[1.02]" : "border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/50"}`}
       >
         <input
           type="file"
@@ -96,8 +95,13 @@ export function FileUploader({ onUpload }: FileUploaderProps) {
               exit={{ opacity: 0, scale: 0.8 }}
               className="flex flex-col items-center gap-4"
             >
-              <Loader2 className="w-16 h-16 text-indigo-500 animate-spin" />
-              <p className="text-zinc-300 font-medium text-center px-4">{statusText}</p>
+              <div className="relative">
+                <Loader2 className="w-16 h-16 text-indigo-500 animate-spin" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-indigo-500/20 animate-pulse" />
+                </div>
+              </div>
+              <p className="text-zinc-300 font-medium">Analyzing codebase structure...</p>
             </motion.div>
           ) : (
             <motion.div
@@ -122,31 +126,11 @@ export function FileUploader({ onUpload }: FileUploaderProps) {
           <motion.p
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="absolute bottom-8 text-red-300 font-medium bg-red-500/10 px-4 py-2 rounded-full border border-red-500/20"
+            className="absolute bottom-8 text-red-400 font-medium bg-red-400/10 px-4 py-2 rounded-full border border-red-400/20"
           >
             {error}
           </motion.p>
         )}
-      </div>
-
-      <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl">
-        {[
-          { title: 'Architecture', desc: 'Understand how modules interact', icon: Layout },
-          { title: 'Security Scan', desc: 'Identify potential vulnerabilities', icon: ShieldAlert },
-          { title: 'Logic Flow', desc: 'Trace execution across files', icon: Zap },
-        ].map((feature, i) => (
-          <motion.div
-            key={feature.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 * i }}
-            className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800 hover:border-zinc-700 transition-colors"
-          >
-            <feature.icon className="w-6 h-6 text-indigo-400 mb-4" />
-            <h3 className="font-bold text-white mb-2">{feature.title}</h3>
-            <p className="text-zinc-500 text-sm leading-relaxed">{feature.desc}</p>
-          </motion.div>
-        ))}
       </div>
     </div>
   );

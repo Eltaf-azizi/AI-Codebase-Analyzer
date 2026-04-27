@@ -2,23 +2,12 @@ export interface FileData {
   path: string;
   content: string;
   size?: number;
+  language?: string;
 }
 
 export interface ProjectStats {
   totalFiles: number;
   totalSize: number;
-}
-
-export interface SkippedFileInfo {
-  path: string;
-  reason: 'excluded_directory' | 'excluded_extension' | 'path_not_allowed' | 'too_large' | 'binary_or_unreadable' | 'empty';
-}
-
-export interface UploadDiagnostics {
-  processedFiles: number;
-  skippedFiles: number;
-  skippedByReason: Record<string, number>;
-  skippedDetails?: SkippedFileInfo[];
 }
 
 export interface ArchitectureNode {
@@ -39,11 +28,6 @@ export interface AnalysisResult {
   features: string[];
   improvements: string[];
   security: string[];
-  indexing?: {
-    attempted: number;
-    indexed: number;
-    failed: number;
-  };
   architectureData?: {
     nodes: ArchitectureNode[];
     links: ArchitectureLink[];
@@ -56,17 +40,20 @@ export interface ChatMessage {
   timestamp: string;
 }
 
+export interface UploadDiagnostics {
+  skippedByDirectory: number;
+  skippedByExtension: number;
+  skippedBySize: number;
+  skippedUnreadable: number;
+  accepted: number;
+}
+
 export interface UploadResponse {
   projectName: string;
   files: FileData[];
   stats: ProjectStats;
   diagnostics?: UploadDiagnostics;
-}
-
-export interface ChatRequest {
-  files: FileData[];
-  message: string;
-  history: ChatMessage[];
+  analysis?: AnalysisResult;
 }
 
 export interface ChatResponse {

@@ -2,34 +2,33 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { FileData, AnalysisResult, ChatMessage, ArchitectureNode, ArchitectureLink } from "../types";
 import { ParserService } from "./parseService";
 import { vectorStore } from "./vectorStore";
-import { dedupeCandidates, pickKeywordFiles, tokenizeQuery } from "../lib/ranking";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
 
 export class AIService {
   private static readonly MODEL_NAME = "gemini-3-flash-preview";
-
+  private static readonly MAX_CONTEXT_BLOCKS = 12;
+  
   /**
    * Initializes the vector store with codebase chunks.
    */
   static async initialize(files: FileData[]) {
     vectorStore.clear();
     const chunks = files.flatMap(file => ParserService.chunkFile(file));
-    
-    const stats = await vectorStore.addEntries(chunks.map((chunk, i) => ({
+
+    return vectorStore.addEntries(chunks.map((chunk, i) => ({
       id: `${chunk.path}-${i}`,
-      text: `File: ${chunk.path}\nType: ${chunk.type}\nLanguage: ${chunk.language}\nName: ${chunk.name || 'N/A'}\nContent:\n${chunk.content}`,
+      text: this.buildChunkText(chunk),
       metadata: { 
         path: chunk.path, 
         startLine: chunk.startLine, 
         endLine: chunk.endLine,
         content: chunk.content,
-        type: chunk.type,
         language: chunk.language,
+        name: chunk.name ?? null,
         charCount: chunk.charCount,
       }
     })));
-    return stats;
   }
   
   /**
@@ -52,8 +51,6 @@ export class AIService {
       - Potential improvements (performance, readability).
       - Security analysis (vulnerabilities, hardcoded secrets).
     `;
-
-    const indexing = await this.initialize(files);
 
     const response = await ai.models.generateContent({
       model: this.MODEL_NAME,
@@ -105,7 +102,6 @@ export class AIService {
 
       return {
         ...result,
-        indexing,
         architectureData: { nodes, links }
       };
     } catch (e) {
@@ -118,79 +114,75 @@ export class AIService {
    * Handles interactive chat with RAG.
    */
   static async chat(files: FileData[], message: string, history: ChatMessage[]): Promise<string> {
-    // 1) Ensure an index exists for retrieval
-    if (vectorStore.getEntryCount() === 0) {
-      await this.initialize(files);
+    let searchResults: Awaited<ReturnType<typeof vectorStore.search>> = [];
+    try {
+      searchResults = await vectorStore.search(message, 12);
+    } catch (error) {
+      console.warn("Semantic search failed, continuing with keyword fallback:", error);
     }
 
-    // 2) Hybrid retrieval (semantic + keyword/path hint)
-    const searchResults = await vectorStore.search(message, 14);
-    const keywords = tokenizeQuery(message);
-    const keywordFiles = pickKeywordFiles(files, keywords, 8);
-
-    const semanticCandidates = searchResults.map((res, index) => {
+    const rankedFiles = this.rankByKeywords(files, message);
+    const semanticBlocks = searchResults.map((res) => {
       const path = String(res.metadata.path ?? "unknown");
-      const content = String(res.metadata.content ?? "");
       const startLine = String(res.metadata.startLine ?? "?");
       const endLine = String(res.metadata.endLine ?? "?");
+      const content = String(res.metadata.content ?? "");
+      const score = typeof res.score === "number" ? res.score.toFixed(3) : "n/a";
       return {
-        path,
-        score: 100 - index,
-        content: `File: ${path}\nLines: ${startLine}-${endLine}\nContent:\n${content}`,
+        id: `${path}:${startLine}-${endLine}`,
+        block: `File: ${path}\nLines: ${startLine}-${endLine}\nSemanticScore: ${score}\nContent:\n${content.slice(0, 2500)}`,
       };
     });
-
-    const keywordCandidates = keywordFiles.map((file, index) => ({
-      path: file.path,
-      score: 60 - index,
-      content: `File: ${file.path}\nContent:\n${file.content.slice(0, 3500)}`,
+    const keywordBlocks = rankedFiles.map((file) => ({
+      id: `${file.path}:keyword`,
+      block: `File: ${file.path}\nKeywordMatch: true\nContent:\n${file.content.slice(0, 2500)}`,
     }));
 
-    const combinedContext = dedupeCandidates([...semanticCandidates, ...keywordCandidates], 12)
-      .map(entry => entry.content)
-      .join('\n\n---\n\n');
+    const mergedContext = [...semanticBlocks, ...keywordBlocks];
+    const seen = new Set<string>();
+    const contextBlocks: string[] = [];
+    for (const item of mergedContext) {
+      if (seen.has(item.id)) continue;
+      seen.add(item.id);
+      contextBlocks.push(item.block);
+      if (contextBlocks.length >= this.MAX_CONTEXT_BLOCKS) break;
+    }
 
     const allFilePaths = files.map(f => f.path).join('\n');
+    const context = contextBlocks.join("\n\n---\n\n");
 
     const systemInstruction = `
-      You are an expert AI Codebase Analyzer. You have access to the codebase provided below.
-      
-      USER CAPABILITY: The user can ask you to find specific files, search for keywords, or provide their own code snippets for analysis.
-      YOUR TASK:
-      - If the user asks for a file or keyword, search through the provided file list and relevant content.
-      - ALWAYS display the full file path for any file you mention.
-      - Do not invent files or paths. If uncertain, say what is uncertain.
-      - If multiple files match a search query (by name or content), list ALL of them with their full paths.
-      - If the user provides a code snippet, analyze it and explain its purpose, functionality, and suggest potential improvements.
-      - Provide relevant code snippets and file paths from the project when applicable.
-      - Keep answers concise but concrete. Prefer grounded statements over speculation.
-      
-      ALL FILES IN PROJECT:
+      You are an expert AI codebase analysis assistant.
+      Requirements:
+      - Use only the provided files/context. If unsure, explicitly say what is missing.
+      - Whenever referencing code, include the exact full file path from the project list.
+      - Never invent file paths or symbols.
+      - Prefer concise answers with bullets and practical guidance.
+      - If user asks to find files/keywords, list every confidently matching file path.
+
+      ALL FILE PATHS:
       ${allFilePaths}
-      
-      RELEVANT CONTEXT (Semantic Search & Keyword Match):
-      ${combinedContext}
+
+      RETRIEVED CONTEXT:
+      ${context || "No context retrieved. Use file list + user query carefully."}
     `;
 
-    try {
-      const chat = ai.chats.create({
-        model: this.MODEL_NAME,
-        config: { systemInstruction },
-        history: history.map(h => ({
-          role: h.role,
-          parts: [{ text: h.content }]
-        }))
-      });
+    const chat = ai.chats.create({
+      model: this.MODEL_NAME,
+      config: { systemInstruction },
+      history: history.map(h => ({
+        role: h.role,
+        parts: [{ text: h.content }]
+      }))
+    });
 
+    try {
       const response = await chat.sendMessage({ message });
       const text = response.text;
       return text || "No response generated.";
     } catch (error) {
       console.error("Chat generation failed:", error);
-      if (!combinedContext) {
-        return "I could not build context for that question yet. Please try rephrasing your query or ask about a specific file path.";
-      }
-      return `I hit a temporary model error, but I found relevant context in this codebase. Try again with a targeted request like: "Explain ${keywordFiles[0]?.path ?? files[0]?.path ?? "a specific file"}".`;
+      return "I couldn't generate a full answer right now. Try again with a narrower question (for example: exact file, feature, or function name).";
     }
   }
 }
