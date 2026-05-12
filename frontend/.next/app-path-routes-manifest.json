@@ -1,0 +1,8 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/chat/[projectId]/page": "/chat/[projectId]",
+  "/dashboard/[projectId]/page": "/dashboard/[projectId]",
+  "/page": "/",
+  "/upload/page": "/upload",
+  "/visualization/[projectId]/page": "/visualization/[projectId]"
+}
