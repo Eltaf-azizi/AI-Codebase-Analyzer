@@ -44,3 +44,16 @@ Production-oriented AI platform for deep repository understanding with FastAPI b
 - Interactive UI with drag-and-drop upload, file search, and chat history
 - D3-based architecture dependency graph visualization
 
+## 🧠 Architecture Overview
+
+### Backend
+
+- `server.ts`
+  - Express server listening on port `3000`
+  - Uses `multer` memory storage for file uploads
+  - Extracts ZIP contents with `adm-zip`
+  - Filters out excluded directories and binary extensions
+  - Provides a health endpoint at `/api/health`
+  - Uses Vite middleware in development and serves static files in production
+
+
