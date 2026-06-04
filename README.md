@@ -86,3 +86,62 @@ Production-oriented AI platform for deep repository understanding with FastAPI b
   - Shared TypeScript interfaces for files, analysis results, messages, and graph data
 
 
+## 📁 Project Structure
+
+```text
+AI Codebase Analyzer/
+├── backend/                    # FastAPI production backend
+│   ├── app/
+│   │   ├── api/v1/routes/      # API endpoints
+│   │   │   ├── analysis.py
+│   │   │   ├── chat.py
+│   │   │   ├── debug.py
+│   │   │   ├── docs.py
+│   │   │   ├── ingestion.py
+│   │   │   ├── projects.py
+│   │   │   └── security.py
+│   │   ├── core/               # Config & logging
+│   │   ├── domain/             # Schemas
+│   │   └── services/           # Business logic
+│   │       ├── analysis/
+│   │       ├── debugging/
+│   │       ├── documentation/
+│   │       ├── ingestion/
+│   │       ├── parsing/
+│   │       ├── rag/
+│   │       └── security/
+│   ├── tests/
+│   │   ├── integration/
+│   │   └── unit/
+│   ├── requirements.txt
+│   └── pytest.ini
+│
+├── frontend/                   # Next.js App Router UI
+│   ├── app/
+│   │   ├── chat/[projectId]/
+│   │   ├── dashboard/[projectId]/
+│   │   ├── upload/
+│   │   └── visualization/[projectId]/
+│   ├── components/             # Reusable UI components
+│   └── lib/                   # API client & utilities
+│
+├── infra/                     # Docker & deployment
+│   ├── docker-compose.yml
+│   ├── Dockerfile.backend
+│   └── Dockerfile.frontend
+│
+├── docs/                      # Documentation
+│   ├── api-spec.md
+│   ├── architecture.md
+│   ├── prompt-library.md
+│   └── runbooks/
+│
+├── src/                       # Legacy prototype (migration reference)
+├── server.ts                  # Legacy server
+├── index.html
+├── metadata.json
+├── package.json
+├── tsconfig.json
+└── vite.config.ts
+```
+
