@@ -176,3 +176,12 @@ npm run dev
 ```text
 http://localhost:3000
 ```
+
+## 🧪 Available Scripts
+
+- `npm run dev` — Start the Express + Vite development server
+- `npm run build` — Build the frontend for production with Vite
+- `npm run preview` — Preview the production build locally
+- `npm run clean` — Delete the generated `dist` folder
+- `npm run lint` — Run TypeScript type checking with `tsc --noEmit`
+
