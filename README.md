@@ -207,3 +207,24 @@ http://localhost:3000
 - The backend skips large binary assets and non-text files when extracting ZIP contents.
 - The AI analysis uses local in-memory storage and does not persist data between sessions.
 
+## 🛠️ Development Notes
+
+- The repository is intentionally designed to be a local prototype / developer utility.
+- To extend analysis capabilities, update `src/services/aiService.ts` with new prompts or structured schemas.
+- To improve chunking, enhance `src/services/parseService.ts` with language-specific parsers.
+- To persist vector data, replace the in-memory store in `src/services/vectorStore.ts`.
+
+## 📚 Dependencies
+
+Key runtime dependencies:
+
+- `react`, `react-dom` — UI
+- `vite`, `@vitejs/plugin-react` — build tooling
+- `express` — backend server
+- `adm-zip` — ZIP extraction
+- `multer` — upload handling
+- `@google/genai` — Gemini AI client
+- `d3` — architecture graph rendering
+- `react-markdown`, `react-syntax-highlighter` — code preview and markdown rendering
+- `tailwindcss`, `@tailwindcss/vite` — styling
+>>>>>>> ddd853cbe9ed9a47e582a81abaac2a06c5699926
